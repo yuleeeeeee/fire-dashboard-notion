@@ -1,7 +1,11 @@
+/**
+ * 루트 레이아웃
+ * 모든 페이지에 공통으로 적용되는 최상위 레이아웃
+ */
+
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
 import { Header } from "@/components/layout/Header"
 import { Footer } from "@/components/layout/Footer"
 
@@ -17,10 +21,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Portfolio",
-    template: "%s | Portfolio",
+    default: "FIRE 달성 계산기",
+    template: "%s | FIRE 대시보드",
   },
-  description: "개발자 포트폴리오 사이트입니다.",
+  description: "Notion CMS 기반 FIRE 달성 계산기 & 진행률 대시보드",
 }
 
 export default function RootLayout({
@@ -31,20 +35,12 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body className="min-h-screen flex flex-col antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </ThemeProvider>
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   )

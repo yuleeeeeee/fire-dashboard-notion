@@ -1,102 +1,87 @@
-import Link from "next/link"
-import { GitBranch, Briefcase, Mail, ArrowRight, Code2 } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
+import type { Metadata } from "next"
+import { TrendingUp, Target, Percent, BarChart2 } from "lucide-react"
+import {
+  getAssets,
+  getGoal,
+  getMonthlyRecords,
+  calculateFireProgress,
+} from "@/lib/notion"
+import { formatKRW, formatPercent } from "@/lib/utils"
+import { FireProgressBar } from "@/components/dashboard/FireProgressBar"
+import { MetricCard } from "@/components/dashboard/MetricCard"
+import { AssetTrendChart } from "@/components/dashboard/AssetTrendChart"
 
-const techStack = [
-  "Next.js", "React", "TypeScript", "Tailwind CSS",
-  "Node.js", "PostgreSQL", "Git", "Figma",
-]
+export const dynamic = "force-dynamic"
 
-const socialLinks = [
-  {
-    href: "https://github.com",
-    icon: GitBranch,
-    label: "GitHub",
-  },
-  {
-    href: "https://linkedin.com",
-    icon: Briefcase,
-    label: "LinkedIn",
-  },
-  {
-    href: "mailto:your@email.com",
-    icon: Mail,
-    label: "이메일",
-  },
-]
+export const metadata: Metadata = {
+  title: "대시보드",
+}
 
-export default function HomePage() {
+export default async function DashboardPage() {
+  const [assets, goal, monthlyRecords] = await Promise.all([
+    getAssets(),
+    getGoal(),
+    getMonthlyRecords(),
+  ])
+
+  const totalAssets = assets.reduce((sum, a) => sum + a.amount, 0)
+
+  if (!goal) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
+        <p className="text-muted-foreground text-center">
+          Notion goals DB에 목표 데이터를 추가해주세요.
+        </p>
+      </div>
+    )
+  }
+
+  const fireCalc = calculateFireProgress(
+    totalAssets,
+    goal.targetAmount,
+    goal.monthlyExpense
+  )
+
   return (
-    <div className="container mx-auto px-4 py-16 max-w-3xl">
-      {/* 히어로 섹션 */}
-      <section className="flex flex-col gap-6">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Code2 className="size-4" />
-          <span className="text-sm font-medium">풀스택 개발자</span>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-            안녕하세요,
-            <br />
-            <span className="text-muted-foreground">저는 OOO입니다.</span>
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed max-w-xl">
-            사용자 경험을 중심으로 생각하는 개발자입니다. 깔끔한 코드와
-            직관적인 인터페이스를 만드는 것을 좋아합니다.
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="flex flex-col gap-8">
+        <div>
+          <h1 className="text-2xl font-bold">FIRE 달성 현황</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Notion에서 최신 데이터를 가져와 표시합니다.
           </p>
         </div>
 
-        {/* CTA 버튼 */}
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/projects"
-            className={cn(buttonVariants({ variant: "default", size: "lg" }))}
-          >
-            프로젝트 보기
-            <ArrowRight className="size-4" />
-          </Link>
-          <Link
-            href="/about"
-            className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-          >
-            소개 보기
-          </Link>
+        <FireProgressBar data={fireCalc} />
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <MetricCard
+            title="총자산"
+            value={formatKRW(totalAssets)}
+            icon={TrendingUp}
+            highlight
+          />
+          <MetricCard
+            title="목표금액"
+            value={formatKRW(goal.targetAmount)}
+            icon={Target}
+          />
+          <MetricCard
+            title="달성률"
+            value={formatPercent(fireCalc.achievementRate)}
+            description="목표 대비 현재 자산 비율"
+            icon={Percent}
+          />
+          <MetricCard
+            title="FIRE 배수"
+            value={`${fireCalc.fireMultiple.toFixed(1)}배`}
+            description="총자산 / 연간생활비"
+            icon={BarChart2}
+          />
         </div>
 
-        {/* 소셜 링크 */}
-        <div className="flex items-center gap-3 pt-2">
-          {socialLinks.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={label}
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={label}
-            >
-              <Icon className="size-5" />
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <Separator className="my-12" />
-
-      {/* 기술 스택 섹션 */}
-      <section className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">기술 스택</h2>
-        <div className="flex flex-wrap gap-2">
-          {techStack.map((tech) => (
-            <Badge key={tech} variant="secondary" className="text-sm px-3 py-1">
-              {tech}
-            </Badge>
-          ))}
-        </div>
-      </section>
+        <AssetTrendChart records={monthlyRecords} />
+      </div>
     </div>
   )
 }
